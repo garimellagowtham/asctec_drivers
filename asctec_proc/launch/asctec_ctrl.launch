@@ -1,0 +1,49 @@
+<launch>
+
+
+  #### Nodelet manager ####################################
+
+  <node pkg="nodelet" type="nodelet" name="pelican_manager" args="manager" 
+    output="screen" />
+
+  #### Asctec Autopilot ###################################
+
+  <node pkg="nodelet" type="nodelet" name="AutoPilotNodelet" 
+    args="load asctec_autopilot/AutoPilotNodelet pelican_manager" output="screen">
+
+    <param name="port" type="string" value="/dev/ttyS3"/>  <!-- LL: ttyS3 -->
+    <param name="speed" type="int" value="57600"/>
+    <param name="freq" type="double" value="20.0"/>
+
+    <param name="enable_IMU_CALCDATA" type="bool" value="false"/>
+    <param name="interval_IMU_CALCDATA" type="int" value="1"/>
+    <param name="offset_IMU_CALCDATA" type="int" value="0"/>
+
+    <param name="enable_LL_STATUS" type="bool" value="true"/>
+    <param name="interval_LL_STATUS" type="int" value="1"/>
+    <param name="offset_LL_STATUS" type="int" value="0"/>
+
+    <param name="enable_CONTROL" type="bool" value="true"/>
+    <param name="interval_CONTROL" type="int" value="1"/>
+    <param name="offset_CONTROL" type="int" value="0"/>
+  </node>
+
+  #### Asctec Proc ########################################
+
+  <node pkg="nodelet" type="nodelet" name="AsctecProcNodelet" 
+    args="load asctec_proc/AsctecProcNodelet pelican_manager" output="screen">
+    <param name="enable_state_changes" type="bool" value="true"/>
+    <param name="enable_ctrl_thrust"   type="bool" value="true"/>
+    <param name="enable_ctrl_yaw"      type="bool" value="true"/>
+  </node>
+
+ ### graph ################################################
+  # $ rosrun rxtools rxplot /fcu/imu/angular_velocity/x /fcu/imu/angular_velocity/y /fcu/imu/angular_velocity/z
+ <!--
+ <node pkg="rxtools" type="rxplot" name="plotter" 
+    args="/asctec/IMU_CALCDATA/angle_nick /asctec/IMU_CALCDATA/angle_roll /asctec/IMU_CALCDATA/angle_yaw" />
+ -->
+</launch>
+
+
+
