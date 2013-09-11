@@ -87,6 +87,15 @@ AsctecProc::AsctecProc(ros::NodeHandle nh, ros::NodeHandle nh_private):
     cmd_yaw_subscriber_ = nh_procdata.subscribe(
       "cmd_yaw", 5, &AsctecProc::cmdYawCallback, this);
   }
+	if (enable_ctrl_rpyt_)
+	{
+		cmd_rpyt_subscriber_ = nh_procdata.subscribe(
+		  "cmd_rpyt",5,&AsctecProc::cmdrpytCallback, this);
+		enable_ctrl_roll_ = true;
+		enable_ctrl_pitch_ = true;
+		enable_ctrl_yaw_ = true;
+		enable_ctrl_thrust_ = true;
+	}
 
   // **** services
 
@@ -119,6 +128,8 @@ void AsctecProc::initializeParams()
     enable_ctrl_roll_ = false;
   if (!nh_private_.getParam ("enable_ctrl_yaw", enable_ctrl_yaw_))
     enable_ctrl_yaw_ = false;
+  if (!nh_private_.getParam ("enable_ctrl_rpyt", enable_ctrl_rpyt_))
+    enable_ctrl_rpyt_ = false;
 
   if (!nh_private_.getParam ("max_ctrl_thrust", max_ctrl_thrust_))
     max_ctrl_thrust_ = 2200;
@@ -255,6 +266,89 @@ void AsctecProc::cmdYawCallback(const std_msgs::Float64ConstPtr& cmd_yaw_rate_ms
   state_mutex_.unlock();
 }
 
+void AsctecProc::cmdrpytCallback(const geometry_msgs::Quaternion& cmd_rpyt_msg)
+{
+  if (!motors_on_ || engaging_) return;
+
+  state_mutex_.lock();
+
+	/***Roll***/
+	// translate from cmd_roll [-1.0 to 1.0] to ctrl_roll [-2047 .. 2047],
+  ctrl_roll_ = (int)(cmd_rpyt_msg.x * asctec::ROS_TO_ASC_ROLL);
+
+  ROS_INFO ("cmd_roll received: %f (%d)", cmd_rpyt_msg.x, ctrl_roll_);
+
+  // limit min/max output
+  if (ctrl_roll_ > max_ctrl_roll_)
+  {
+    ROS_WARN("ctrl_roll of %d too big, clamping to %d!", ctrl_roll_, max_ctrl_roll_);
+    ctrl_roll_ = max_ctrl_roll_;
+  }
+  else if (ctrl_roll_ < -max_ctrl_roll_)
+  {
+    ROS_WARN("ctrl_roll of %d too small, clamping to -%d!", ctrl_roll_, -max_ctrl_roll_);
+    ctrl_roll_ = -max_ctrl_roll_;
+  }
+
+	/***Pitch***/
+	// translate from cmd_pitch [-1.0 to 1.0] to ctrl_pitch [-2047 .. 2047],
+  ctrl_pitch_ = (int)(cmd_rpyt_msg.y * asctec::ROS_TO_ASC_PITCH);
+
+  ROS_DEBUG ("cmd_pitch received: %f (%d)", cmd_rpyt_msg.y, ctrl_pitch_);
+
+  // limit min/max output
+  if (ctrl_pitch_ > max_ctrl_pitch_)
+  {
+    ROS_WARN("ctrl_pitch of %d too big, clamping to %d!", ctrl_pitch_, max_ctrl_pitch_);
+    ctrl_pitch_ = max_ctrl_pitch_;
+  }
+  else if (ctrl_pitch_ < -max_ctrl_pitch_)
+  {
+    ROS_WARN("ctrl_pitch of %d too small, clamping to -%d!", ctrl_pitch_, -max_ctrl_pitch_);
+    ctrl_pitch_ = -max_ctrl_pitch_;
+  }
+
+	/***Yaw***/
+  // translate from cmd_yaw [rad/s] to ctrl_yaw [-2047 .. 2047],
+  ctrl_yaw_ = (int)(cmd_rpyt_msg.z * asctec::ROS_TO_ASC_YAW_RATE);
+
+  ROS_DEBUG ("cmd_yaw received: %f (%d)", cmd_rpyt_msg.z, ctrl_yaw_);
+
+  // limit min/max output
+  if (ctrl_yaw_ > max_ctrl_yaw_)
+  {
+    ROS_WARN("ctrl_yaw of %d too big, clamping to %d!", ctrl_yaw_, max_ctrl_yaw_);
+    ctrl_yaw_ = max_ctrl_yaw_;
+  }
+  else if (ctrl_yaw_ < -max_ctrl_yaw_)
+  {
+    ROS_WARN("ctrl_yaw of %d too small, clamping to -%d!", ctrl_yaw_, -max_ctrl_yaw_);
+    ctrl_yaw_ = -max_ctrl_yaw_;
+  }
+
+	/***Throttle***/
+	// translate from cmd_thrust [0.0 to 1.0] to ctrl_thrust [0 to 4095],
+  ctrl_thrust_ = (int)(cmd_rpyt_msg.w * asctec::ROS_TO_ASC_THRUST);
+
+  ROS_DEBUG ("cmd_thrust received: %f (%d)", cmd_rpyt_msg.w, ctrl_thrust_);
+
+  // limit min-max output
+  if (ctrl_thrust_ > max_ctrl_thrust_)
+  {
+    ROS_WARN("ctrl_thrust of %d too big, clamping to %d!", ctrl_thrust_, max_ctrl_thrust_);
+    ctrl_thrust_ = max_ctrl_thrust_;
+  }
+  else if (ctrl_thrust_ < 0)
+  {
+    ROS_WARN("ctrl_thrust of %d too small, clamping to 0!", ctrl_thrust_);
+    ctrl_thrust_ = 0;
+  }
+
+
+  publishCtrlInputMsg();
+
+  state_mutex_.unlock();
+}
 void AsctecProc::cmdThrustCallback(const std_msgs::Float64ConstPtr& cmd_thrust_msg)
 {
   if (!motors_on_ || engaging_) return;

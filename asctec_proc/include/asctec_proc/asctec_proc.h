@@ -4,6 +4,7 @@
 #include <ros/ros.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/Bool.h>
+#include <geometry_msgs/Vector3.h>
 
 //#include <mav_msgs/State.h>
 #include <mav_msgs/Height.h>
@@ -50,6 +51,7 @@ class AsctecProc
     ros::Subscriber cmd_roll_subscriber_;
     ros::Subscriber cmd_pitch_subscriber_;
     ros::Subscriber cmd_yaw_subscriber_;
+    ros::Subscriber cmd_rpyt_subscriber_;
     ros::Subscriber ll_status_subscriber_;
     ros::Subscriber imu_calcdata_subscriber_;
     ros::Subscriber state_subscriber_;
@@ -84,6 +86,7 @@ class AsctecProc
     bool enable_ctrl_roll_;
     bool enable_ctrl_pitch_;
     bool enable_ctrl_yaw_;
+    bool enable_ctrl_rpyt_;
 
     bool enable_state_changes_;   // if true, allow motor on/off service
 
@@ -101,6 +104,7 @@ class AsctecProc
     void cmdRollCallback  (const std_msgs::Float64ConstPtr& cmd_roll_msg);
     void cmdPitchCallback (const std_msgs::Float64ConstPtr& cmd_pitch_msg);
     void cmdYawCallback   (const std_msgs::Float64ConstPtr& cmd_yaw_rate_msg);
+    void cmdrpytCallback   (const geometry_msgs::Quaternion& cmd_rpyt_msg);
     void llStatusCallback (const asctec_msgs::LLStatusPtr& ll_status_msg);
     void imuCalcDataCallback(const asctec_msgs::IMUCalcDataConstPtr& imu_calcdata_msg);
 
