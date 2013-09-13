@@ -1,0 +1,16 @@
+<package>
+  <description brief="asctec_ground_station">
+
+     asctec_ground_station
+
+  </description>
+  <author>Gowtham</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/asctec_ground_station</url>
+  <depend package="asctec_autopilot"/>
+  <depend package="asctec_proc"/>
+
+</package>
+
+

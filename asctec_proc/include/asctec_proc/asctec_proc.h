@@ -4,7 +4,7 @@
 #include <ros/ros.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/Bool.h>
-#include <geometry_msgs/Vector3.h>
+#include <geometry_msgs/Quaternion.h>
 
 //#include <mav_msgs/State.h>
 #include <mav_msgs/Height.h>
