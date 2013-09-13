@@ -41,7 +41,6 @@ ros::Subscriber lowlevel_sub;
 //RC_Trim min and max values used for control and landing:
 SetptCtrl *setptctrlinst;
 pthread_mutex_t setptctrl_mutex = PTHREAD_MUTEX_INITIALIZER;
-uint16_t rc_trim = 0, rc_max = 2047, rc_min = 2047, throt_trim = 2047, throt_min = 0, throt_max = 4095;
 
 
 /*
@@ -53,15 +52,18 @@ void timerCallback(const ros::TimerEvent&)
 }
 */
 
-//float RC_TRIM[SERVONUM], RC_MIN[SERVONUM], RC_MAX[SERVONUM];
+float RC_TRIM[RC_SIZE] {0,0,0,0.5};
+float RC_MIN[RC_SIZE] {-1,-1,-1,0};
+float RC_MAX[RC_SIZE] {1,1,1,1};
 float Fextz = -4.0; //-mg roughly start with smaller value and increase slowly
-float rptmin[3] {-PI/3.4615, -PI/3.4615, 2};
-float rptmax[3] {PI/3.4615, PI/3.4615, 10};
+float rptmin[4] {-PI/3.4615, -PI/3.4615, -2, 2};
+float rptmax[4] {PI/3.4615, PI/3.4615, 2, 10};
 //float rptbounds[3] {PI/18,PI/18,10};
-float rptbounds[3] {PI/9,PI/9,10};
+float rptbounds[4] {PI/9,PI/9,2,10};
 asctec_ground_station::RC_in rcmsg;
 int row,col;
-int refreshcount = 0;
+//int refreshcount = 0;
+bool setptctrl_active = false;
 
 void statuszoneclear()
 {
@@ -73,7 +75,7 @@ void statuszoneclear()
 float scale(float val, int id)
 {
 	float res = 0;
-	//cutoff for the input value so that we dont ever command uav to rotate more than +/- 5 degrees
+	//cutoff for the input value so that we dont ever command uav to rotate more than bounds
 	if(val < -rptbounds[id])
 	{
 		val =  -rptbounds[id];
@@ -86,18 +88,18 @@ float scale(float val, int id)
 	return res;
 }
 
-void rcpub(Vector3 rpy, double throttle)
+void rcpub(Vector3 rpy, float throttle)
 {
 			//scale
-			rcmsg.rcvalues[0] = (uint16_t)scale(rpy[0],0);//roll
-			rcmsg.rcvalues[1] = (uint16_t)scale(rpy[1],1);//pitch
-			rcmsg.rcvalues[2] = (uint16_t)scale(throttle,2);//throttle
-			rcmsg.rcvalues[3] = (uint16_t)RC_TRIM[3];//yaw is default trim
+			rcmsg.rcvalues[0] = (double)scale(rpy[0],0);//roll
+			rcmsg.rcvalues[1] = (double)scale(rpy[1],1);//pitch
+			rcmsg.rcvalues[2] = (double)RC_TRIM[2];//yaw is default trim
+			rcmsg.rcvalues[3] = (double)scale(throttle,3);//throttle
 			//publish message
 			//ROS_INFO("Publishing rc_override");
 			//ROS_INFO("Publishing done");
 			//print commanded data:
-			mvprintw(0,0,"RC_1: %lu\t RC_2: %lu\t RC_3: %lu\t RC_4: %lu\t",rcmsg.rcvalues[0], rcmsg.rcvalues[1], rcmsg.rcvalues[2], rcmsg.rcvalues[3]);
+			mvprintw(0,0,"RC_1: %f\t RC_2: %f\t RC_3: %f\t RC_4: %f\t",rcmsg.rcvalues[0], rcmsg.rcvalues[1], rcmsg.rcvalues[2], rcmsg.rcvalues[3]);
 			mvprintw(1,0,"r: %f\t p: %f\t y: %f\t t: %f\t\n",rpy[0]*(180/PI), rpy[1]*(180/PI), rpy[2]*(180/PI), throttle);
 			rcoverride_pub.publish(rcmsg);
 }
@@ -160,11 +162,9 @@ int main(int argc, char **argv)
 	usleep(500000);
 	//publishers
 	rcoverride_pub = gcs_nh.advertise<asctec_ground_station::RC_in>("rcoverride", 2);
-	datareq_pub = gcs_nh.advertise<std_msgs::String>("datareq",2);
+	//datareq_pub = gcs_nh.advertise<std_msgs::String>("datareq",2);
 	modereq_pub = gcs_nh.advertise<std_msgs::String>("modereq",2);
 	commandreq_pub = gcs_nh.advertise<std_msgs::String>("commandreq",2);
-	paramlistreq_pub = gcs_nh.advertise<std_msgs::Empty>("paramlistreq",2);
-	paramsetreq_pub = gcs_nh.advertise<std_msgs::String>("paramsetreq",2);
 	usergains_pub = gcs_nh.advertise<asctec_ground_station::PIDGains>("usergains",2);
 	//set size of rcmsg:
 	rcmsg.rcvalues.resize(RC_SIZE,0);
@@ -175,8 +175,8 @@ int main(int argc, char **argv)
 	string sbuffer;
 
 	//variables for control:
-	char rcid[10];
-	char parambuf[40];
+	//char rcid[10];
+	//char parambuf[40];
 	char mode = '+';
 	char mode2 = 'u';
 	//messages for parsing and sending
@@ -185,7 +185,7 @@ int main(int argc, char **argv)
 	std_msgs::Empty emptymsg;
 	asctec_ground_station::PIDGains gainsmsg;
 	tf::Vector3 rpycommand;
-	double throtcommand;
+	float throtcommand;
 	refresh();
 	usleep(1000000);
 	statuszoneclear();
@@ -205,12 +205,12 @@ int main(int argc, char **argv)
 				setptctrlinst->kpt = 0.8;
 				setptctrlinst->kdt = 0.7;
 				setptctrlinst->cbatt = 5.0;
-				dataparseval.data = "ATTITUDE START";
+				//dataparseval.data = "ATTITUDE START";
 			//datareq_pub.publish(dataparseval);
 				//register the callback for ros topic:
 				//ROS_INFO("Hai");
-				dataparseval.data = "EXTENDED START";
-				datareq_pub.publish(dataparseval);//starts extended value
+				//dataparseval.data = "EXTENDED START";
+				//datareq_pub.publish(dataparseval);//starts extended value
 				move((row+20)/2,0);
 				clrtoeol();
 				//make setptctrl thread active:
@@ -233,10 +233,6 @@ int main(int argc, char **argv)
 						statuszoneclear();
 						if(mode2 == 'u')
 							printw("Controls: mode +/- to increase decrease values \n r-> kpr (both roll and pitch tied) \t R-> kdr \t t->kpt \t T -> kdt \t b-> Fextz (Hover coeff) \t \n");
-						else if(mode2 == 'i')
-							printw("Controls: mode +/- to increase decrease values \n r->rate_roll+pitch_P (both roll and pitch tied) \t R-> rate_roll+pitch_D \t y->rate_yaw_P \t Y -> rate_yaw_D \t \n");
-						else if(mode2 == 'o')
-							printw("Controls: mode +/- to increase decrease values \n r->stb_roll+pitch_P (both roll and pitch tied) \t  y->stb_yaw_P \t \n");
 					}
 					pthread_mutex_lock(&setptctrl_mutex);
 					//action base on mode
@@ -300,7 +296,7 @@ int main(int argc, char **argv)
 							gainsmsg.id = string("Throttle pd");
 							usergains_pub.publish(gainsmsg);
 					}
-										pthread_mutex_unlock(&setptctrl_mutex);
+					pthread_mutex_unlock(&setptctrl_mutex);
 					refresh();
 				}
 				timeout(-1);
@@ -311,10 +307,10 @@ int main(int argc, char **argv)
 				rpycommand.setValue(0.0,0.0,0.0);
 				throtcommand = 3.0;
 				timeout(50);//20Hz
-				dataparseval.data = "ATTITUDE START";
-				datareq_pub.publish(dataparseval);
-				dataparseval.data = "EXTENDED START";
-				datareq_pub.publish(dataparseval);//starts extended value
+				//dataparseval.data = "ATTITUDE START";
+				//datareq_pub.publish(dataparseval);
+				//dataparseval.data = "EXTENDED START";
+				//datareq_pub.publish(dataparseval);//starts extended value
 				//pthread_mutex_lock(&setptctrl_mutex);
 					//setptctrl_active = true;
 				//pthread_mutex_unlock(&setptctrl_mutex);
@@ -349,23 +345,23 @@ int main(int argc, char **argv)
 					else if(cbuffer == 'r')
 					{
 						if(mode == '+')
-							setptctrlinst.rpycommand[0] += 2*(PI/180);
+							rpycommand[0] += 2*(PI/180);
 						else 
-							setptctrlinst.rpycommand[0] -= 2*(PI/180);
+							rpycommand[0] -= 2*(PI/180);
 					}
 					else if(cbuffer == 'p')
 					{
 						if(mode == '+')
-							setptctrlinst.rpycommand[1] += 2*(PI/180);
+							rpycommand[1] += 2*(PI/180);
 						else 
-							setptctrlinst.rpycommand[1] -= 2*(PI/180);
+							rpycommand[1] -= 2*(PI/180);
 					}
 					else if(cbuffer == 't')
 					{
 						if(mode == '+')
-							setptctrlinst.throtcommand *= 1.1;
+							throtcommand *= 1.1;
 						else 
-							setptctrlinst.throtcommand /= 1.1;
+							throtcommand /= 1.1;
 					}
 					else if(cbuffer == '+'|| cbuffer == '-')
 						mode = cbuffer;
@@ -377,7 +373,7 @@ int main(int argc, char **argv)
 				//ARM
 				statuszoneclear();
 				printw("Setting rc values to minimum\n");
-				for(int i = 0;i<SERVONUM;i++)
+				for(int i = 0;i<RC_SIZE;i++)
 					rcmsg.rcvalues[i] = RC_MIN[i];
 				rcoverride_pub.publish(rcmsg);
 				usleep(10000);
@@ -448,13 +444,12 @@ QUIT:
 	for(int i =0;i<10;i++)
 		commandreq_pub.publish(cmdparse);//attempting to disarm 5 times if the prev one did not succeed
 	printw("Quitting\n");
-	dataparseval.data = "ATTITUDE STOP";
-	datareq_pub.publish(dataparseval);
-	dataparseval.data = "EXTENDED STOP";
-	datareq_pub.publish(dataparseval);
+	//dataparseval.data = "ATTITUDE STOP";
+	//datareq_pub.publish(dataparseval);
+	//dataparseval.data = "EXTENDED STOP";
+	//datareq_pub.publish(dataparseval);
 	refresh();
 	usleep(5000000);
-	paramlistreq_pub.publish(emptymsg);
 	endwin();
 
 	return 0;

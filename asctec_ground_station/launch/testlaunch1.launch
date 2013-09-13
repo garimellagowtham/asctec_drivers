@@ -1,0 +1,4 @@
+<launch>
+		<remap from =  "/gcs/pose" to = "/APM2_VRPN/pose"/>
+		<node pkg="asctec_ground_station" name="keyboardinit" type="keyboardsetctrl"/>
+</launch>

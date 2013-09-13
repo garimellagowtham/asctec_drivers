@@ -1,0 +1,7 @@
+<launch>
+	<arg name="port" default="/dev/ttyUSB1"/>
+	<node pkg="mavlink_ros" name="serialinit" type="mavlink_ros_serial" args="-p $(arg port)"/>
+	<node pkg="mavlink_ros" name="parseinit" type="mavlink_msg_parser"/>
+	<node pkg="mavlink_ros" name="keyboardinit" type="keyboardctrl"/>
+	<remap
+</launch>
