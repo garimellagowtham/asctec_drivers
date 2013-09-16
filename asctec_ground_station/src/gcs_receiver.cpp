@@ -166,7 +166,7 @@ void llstatusCallback(const asctec_msgs::LLStatusPtr& ll_status_msg)
 			std_msgs::Float32 voltagemsg;
 			voltagemsg.data = ((float)ll_status_msg->battery_voltage_1)/1000.0f;//in volts
 			batteryvoltage_pub.publish(voltagemsg);
-			printf("Sys Status: cpu_load: %d flying: %d motors_on: %d flightmode: %d up_time: %d",ll_status_msg->cpu_load, ll_status_msg->flying, ll_status_msg->motors_on, ll_status_msg->flightMode, ll_status_msg->up_time);
+			ROS_INFO("Sys Status: cpu_load: %d flying: %d motors_on: %d flightmode: %d up_time: %d\n",ll_status_msg->cpu_load, ll_status_msg->flying, ll_status_msg->motors_on, ll_status_msg->flightMode, ll_status_msg->up_time);
 	}
 	if(heartbeatcount == 255)
 		heartbeatcount = 0;
@@ -189,6 +189,9 @@ void imudataCallback(const sensor_msgs::Imu imu_msg)
 	//get rpy
 	tf::Matrix3x3 rotmat = transform.getBasis();
 	rotmat.getEulerYPR(rpy_vec.z,rpy_vec.y,rpy_vec.x);
+	rpy_vec.x = (180/PI)*rpy_vec.x;
+	rpy_vec.y = (180/PI)*rpy_vec.y;
+	rpy_vec.z = (180/PI)*rpy_vec.z;
 	rpy_pub.publish(rpy_vec);	
 	//printf("yaw: %f pitch: %f roll: %f \n",attitudemsg.yaw*(180/PI),attitudemsg.pitch*(180/PI),attitudemsg.roll*(180/PI));
 
