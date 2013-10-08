@@ -166,7 +166,7 @@ void llstatusCallback(const asctec_msgs::LLStatusPtr& ll_status_msg)
 			std_msgs::Float32 voltagemsg;
 			voltagemsg.data = ((float)ll_status_msg->battery_voltage_1)/1000.0f;//in volts
 			batteryvoltage_pub.publish(voltagemsg);
-			ROS_INFO("Sys Status: cpu_load: %d flying: %d motors_on: %d flightmode: %d up_time: %d\n",ll_status_msg->cpu_load, ll_status_msg->flying, ll_status_msg->motors_on, ll_status_msg->flightMode, ll_status_msg->up_time);
+			ROS_INFO("Sys Status: cpu_load: %d flying: %d motors_on: %d flightmode: %d up_time: %d serial_status: %d\n",ll_status_msg->cpu_load, ll_status_msg->flying, ll_status_msg->motors_on, ll_status_msg->flightMode, ll_status_msg->up_time, ll_status_msg->status);
 	}
 	if(heartbeatcount == 255)
 		heartbeatcount = 0;

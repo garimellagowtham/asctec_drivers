@@ -21,6 +21,9 @@
     <param name="interval_CONTROL" type="int" value="1"/>
     <param name="offset_CONTROL" type="int" value="0"/>
 		
+    <param name="enable_RC_DATA" type="bool" value="true"/>
+    <param name="interval_CONTROL" type="int" value="10"/>
+    <param name="offset_DATA" type="int" value="0"/>
 
   </node>
 
@@ -30,6 +33,9 @@
     output="screen">
     <param name="enable_state_changes" type="bool" value="true"/>
     <param name="enable_ctrl_rpyt" type="bool" value="true"/>
+    <param name="enable_ctrl_roll" type="bool" value="true"/>
+    <param name="enable_ctrl_pitch" type="bool" value="true"/>
+    <param name="enable_ctrl_yaw" type="bool" value="true"/>
 
   </node>
   <node pkg="asctec_ground_station" type="gcs_receiver" name="receiver" output="screen"/>
