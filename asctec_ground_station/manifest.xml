@@ -10,6 +10,7 @@
   <url>http://ros.org/wiki/asctec_ground_station</url>
   <depend package="asctec_autopilot"/>
   <depend package="asctec_proc"/>
+  <depend package="ros_vrpn_client"/>
 
 </package>
 

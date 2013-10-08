@@ -10,6 +10,7 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/Vector3.h>
 #include <std_msgs/Float32.h>
+#include "asctec_ground_station/ctrl_command.h"//for roll pitch, yaw and thrust
 //#include <DspFilters/Butterworth.h>
 #include "fstream"
 #include "iostream"
@@ -41,6 +42,7 @@ class SetptCtrl
 		ros::Publisher marker_pubv;
 		ros::Publisher velocity_pub;
 		ros::Publisher vrpnrpy_pub;
+		ros::Publisher ctrlcmd_pub;
 		visualization_msgs::Marker velmarker;
 		//ros::Publisher marker_pubdx;
 		ofstream ofile;
@@ -58,6 +60,7 @@ class SetptCtrl
 		geometry_msgs::Point p2;
 		geometry_msgs::Vector3 vel;
 		geometry_msgs::Vector3 rpymsg;
+		asctec_ground_station::ctrl_command ctrl_cmd;
 		//Dsp::SimpleFilter<Dsp::Butterworth::Design::LowPass <3>,3> butter;
 	public:
 		SetptCtrl();

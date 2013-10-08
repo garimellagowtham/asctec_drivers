@@ -1,0 +1,7 @@
+<launch>
+	<rosparam command="load" file="$(find ros_vrpn_client)/params/optitrak.yaml"/>
+  <node pkg="ros_vrpn_client" type="ros_vrpn_client" name="pelican"
+	  output="screen"/>
+	<remap from =  "/pctrl/pose" to = "/pelican/pose"/>
+	<node pkg="asctec_ground_station" name="position_ctrl" type="position_control" />
+</launch>

@@ -34,5 +34,7 @@ rosbuild_add_library(SetptCtrl src/SetptCtrl.C)
 
 rosbuild_add_executable(keyboardsetctrl src/keyboardsetpointcontrol.cpp)
 target_link_libraries(keyboardsetctrl SetptCtrl ncurses)
+rosbuild_add_executable(position_control src/position_control.C)
+target_link_libraries(position_control SetptCtrl)
 
 rosbuild_add_executable(gcs_receiver src/gcs_receiver.cpp)
