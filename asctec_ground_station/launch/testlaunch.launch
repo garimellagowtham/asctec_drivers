@@ -3,5 +3,5 @@
 		<param name = "vrpn_server_ip" value = "192.168.1.2" type = "string"/>
 		<node pkg = "ros_vrpn_client" name = "APM2_VRPN" type = "ros_vrpn_client"/>
 		<remap from =  "/mavlink/pose" to = "/APM2_VRPN/pose"/>
-		<node pkg="mavlink_ros" name="keyboardinit" type="keyboardsetctrl"/>
+		<node pkg="asctec_ground_station" name="keyboardinit" type="keyboardsetctrl"/>
 </launch>

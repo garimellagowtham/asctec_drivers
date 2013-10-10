@@ -1,5 +1,5 @@
 <launch>
 		<arg name="port" default="/dev/ttyUSB0"/>
-		<node pkg="mavlink_ros" name="serial_link" type="mavlink_ros_serial" args= "-p $(arg port)"/>
+		<node pkg="asctec_drivers" name="serial_link" type="mavlink_ros_serial" args= "-p $(arg port)"/>
 		<node pkg="mavlink_ros" name="msg_parser" type="mavlink_msg_parser" cwd = "node" />
 </launch>

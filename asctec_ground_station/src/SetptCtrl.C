@@ -44,6 +44,7 @@ SetptCtrl::SetptCtrl(ros::NodeHandle *n1)
 	marker_pubv = n->advertise<visualization_msgs::Marker>("velocityo", 1);
 	//velocity_pub = n->advertise<geometry_msgs::Vector3>("velfilt", 10);
 	vrpnrpy_pub = n->advertise<geometry_msgs::Vector3>("vrpnrpy",10);
+	ctrlcmd_pub = n->advertise<asctec_ground_station::ctrl_command>("rpyctrl",10);
 	//set velocity marker configuration
 	velmarker.header.frame_id = "/optitrak";
 	velmarker.header.stamp = ros::Time::now();
@@ -186,7 +187,7 @@ void SetptCtrl::applybutter(const Vector3 dx, Vector3 &dxfilt)
 void SetptCtrl::voltageupdate(const std_msgs::Float32 &currvoltage)
 {
 	battvoltage = currvoltage.data;
-	mvprintw(3,0,"Battery Voltage: %f",battvoltage);
+	//mvprintw(3,0,"Battery Voltage: %f",battvoltage);
 	//update Fext based on battvoltage;
 	Fext[2] = -(cbatt + mbatt*(10.5 -battvoltage));//approximately around 10.5 V 
 	if(battvoltage < 9.5)
@@ -235,11 +236,17 @@ void SetptCtrl::Set(const geometry_msgs::TransformStamped::ConstPtr &currframe)
 	Transform t2;//create a transform for finding the action
 	gettransformtogoal(t2,desiredvec/desiredvec.length(),rpy[2]);//using current yaw
 	rpycommand = getrpy(t2);
+	ctrl_cmd.roll = rpycommand[0];
+	ctrl_cmd.pitch = rpycommand[1];
+	ctrl_cmd.rateyaw = rpycommand[2];
+	ctrl_cmd.thrust = throtcommand;
+	ctrlcmd_pub.publish(ctrl_cmd);
+	//Publish rpyt commands:
 	//mvprintw(7,0,"current rpy: %f\t%f\t%f",rpy[0],rpy[1],rpy[2]);
 	//convert rpy to the imu frame for commanding purposes:
-	double temp = rpycommand[0];
-	rpycommand[0] = rpycommand[1];
-	rpycommand[1] = temp;//exchange roll and pitch to get the values wrt imu frame;
+	//double temp = rpycommand[0];
+	//rpycommand[0] = rpycommand[1];
+	//rpycommand[1] = temp;//exchange roll and pitch to get the values wrt imu frame;
 	//cout<<throtcommand<<"\t"<<rpycommand[0]*(180/PI)<<"\t"<<rpycommand[1]*(180/PI)<<"\t"<<rpycommand[2]*(180/PI)<<"\t"<<endl;
 	//Broadcasting
 	static tf::TransformBroadcaster broadcaster;
@@ -261,7 +268,7 @@ void SetptCtrl::Set(const geometry_msgs::TransformStamped::ConstPtr &currframe)
 	/*vector3TFToMsg(ddx,vel);
 	velocity_pub.publish(vel);
 	*/
-	cout<<setprecision(13);
+	//cout<<setprecision(13);
 	ofile<<setprecision(14);
 	ofile<<tcurr<<"\t"<<dx[0]<<"\t"<<dx[1]<<"\t"<<dx[2]<<"\t"<<dxfilt[0]<<"\t"<<dxfilt[1]<<"\t"<<dxfilt[2]<<"\t"<<ddx[0]<<"\t"<<ddx[1]<<"\t"<<ddx[2]<<"\t"<<desiredvec[0]<<"\t"<<desiredvec[1]<<"\t"<<desiredvec[2]<<endl;
 	//ofile<<currframe->header.stamp.toSec()<<"\t"<<rpy[0]<<"\t"<<rpy[1]<<"\t"<<rpy[2]<<endl;//roll

@@ -1,1 +1,4 @@
 src/asctec_ground_station
+*.h.swp
+*.c.swp
+*.swp
